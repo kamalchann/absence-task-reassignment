@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudden Absence Task Reassignment System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        /* Employee List Styles */
+        .employee-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .employee-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+        }
+
+        .employee-card:hover {
+            background: #e8eaf6;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .employee-card.absent {
+            background: #ffebee;
+            border-left-color: #e74c3c;
+        }
+
+        .employee-info h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .employee-meta {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #e74c3c;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Task Board Styles */
+        .task-board {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .task-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .task-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-card.urgent {
+            border-left: 4px solid #e74c3c;
+            background: #fff5f5;
+        }
+
+        .task-card.warning {
+            border-left: 4px solid #f39c12;
+            background: #fffbf0;
+        }
+
+        .task-card.flagged {
+            border-left: 4px solid #8e44ad;
+            background: #faf5ff;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .task-id {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 0.9em;
+        }
+
+        .task-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .task-status.open {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .task-status.reassigning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .task-status.flagged {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .task-title {
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .task-details {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .task-assigned-to {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        .task-assigned-to strong {
+            color: #667eea;
+        }
+
+        .task-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+            color: #999;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .competency-score {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        /* Manager Review Section */
+        .manager-review {
+            background: #fff3cd;
+            border: 2px solid #f39c12;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .manager-review h3 {
+            color: #856404;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .review-badge {
+            background: #f39c12;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 50%;
+            font-size: 0.8em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+
+        .review-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #f39c12;
+        }
+
+        .review-reason {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        /* Button Styles */
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+        }
+
+        button.danger {
+            background: #e74c3c;
+        }
+
+        button.danger:hover {
+            background: #c0392b;
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 0 30px;
+            padding-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-top: 3px solid #667eea;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #667eea #f1f1f1;
+        }
+
+        .scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 Sudden Absence Task Reassignment System</h1>
+            <p>Intelligent task reassignment based on competency scores and workload capacity</p>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-value" id="totalEmployees">0</div>
+                <div class="stat-label">Total Employees</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="absenceCount">0</div>
+                <div class="stat-label">Currently Absent</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="openTasksCount">0</div>
+                <div class="stat-label">Open Tasks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="flaggedCount">0</div>
+                <div class="stat-label">Flagged for Review</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Employee List Section -->
+            <div class="section">
+                <h2 class="section-title">👥 Employee List</h2>
+                <div class="employee-list" id="employeeList"></div>
+            </div>
+
+            <!-- Task Board Section -->
+            <div class="section">
+                <h2 class="section-title">📋 Task Board</h2>
+                <div class="task-board scrollbar" id="taskBoard"></div>
+                <div class="manager-review" id="managerReview" style="display: none;">
+                    <h3>
+                        ⚠️ Tasks Flagged for Manager Review
+                        <span class="review-badge" id="flaggedBadge">0</span>
+                    </h3>
+                    <div id="flaggedTasksList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Model
+        const system = {
+            employees: [
+                { id: 1, name: 'Alice Johnson', role: 'Developer', absent: false, tasks: ['T001', 'T003'], completedTasks: 18, onTimeCount: 17, efficiencyScore: 0.94 },
+                { id: 2, name: 'Bob Smith', role: 'Designer', absent: false, tasks: ['T002'], completedTasks: 15, onTimeCount: 13, efficiencyScore: 0.87 },
+                { id: 3, name: 'Carol Davis', role: 'Developer', absent: false, tasks: [], completedTasks: 22, onTimeCount: 21, efficiencyScore: 0.98 },
+                { id: 4, name: 'David Wilson', role: 'QA Engineer', absent: false, tasks: ['T004', 'T005'], completedTasks: 20, onTimeCount: 18, efficiencyScore: 0.91 },
+                { id: 5, name: 'Emma White', role: 'Frontend Developer', absent: false, tasks: ['T006'], completedTasks: 16, onTimeCount: 15, efficiencyScore: 0.95 }
+            ],
+            tasks: [
+                { id: 'T001', title: 'Fix Login Bug', assignedTo: 1, status: 'open', priority: 'high', requiredRole: 'Developer', description: 'Critical authentication issue in production' },
+                { id: 'T002', title: 'Design New Dashboard', assignedTo: 2, status: 'open', priority: 'medium', requiredRole: 'Designer', description: 'Create mockups for admin dashboard' },
+                { id: 'T003', title: 'Database Optimization', assignedTo: 1, status: 'open', priority: 'medium', requiredRole: 'Developer', description: 'Improve query performance' },
+                { id: 'T004', title: 'Test Payment Module', assignedTo: 4, status: 'open', priority: 'high', requiredRole: 'QA Engineer', description: 'Complete regression testing' },
+                { id: 'T005', title: 'API Documentation', assignedTo: 4, status: 'open', priority: 'low', requiredRole: 'Developer', description: 'Update REST API docs' },
+                { id: 'T006', title: 'Responsive Design', assignedTo: 5, status: 'open', priority: 'medium', requiredRole: 'Frontend Developer', description: 'Mobile-first redesign of landing page' }
+            ],
+            flaggedTasks: []
+        };
+
+        // Constants
+        const WORKLOAD_THRESHOLD = 3; // Max tasks per person
+        const MIN_COMPETENCY_SCORE = 0.85; // Minimum acceptable competency score
+
+        // Utility Functions
+        function calculateCompetencyScore(employee) {
+            // Calculate based on on-time rate and efficiency
+            const onTimeRate = employee.completedTasks > 0 ? employee.onTimeCount / employee.completedTasks : 0;
+            const competency = (onTimeRate * 0.5) + (employee.efficiencyScore * 0.5);
+            return Math.min(1, competency).toFixed(2);
+        }
+
+        function getAvailableCapacity(employee) {
+            return WORKLOAD_THRESHOLD - employee.tasks.length;
+        }
+
+        function findBestFitTeammate(taskDetails, absentEmployeeId) {
+            const candidates = system.employees.filter(emp => {
+                return emp.id !== absentEmployeeId && // Not the absent person
+                       !emp.absent && // Not currently absent
+                       emp.role === taskDetails.requiredRole && // Has required role
+                       getAvailableCapacity(emp) > 0; // Has capacity
+            });
+
+            if (candidates.length === 0) return null;
+
+            // Sort by competency score (descending) and capacity (ascending)
+            candidates.sort((a, b) => {
+                const scoreA = parseFloat(calculateCompetencyScore(a));
+                const scoreB = parseFloat(calculateCompetencyScore(b));
+                if (scoreB !== scoreA) return scoreB - scoreA;
+                return getAvailableCapacity(b) - getAvailableCapacity(a);
+            });
+
+            const bestFit = candidates[0];
+            const competency = parseFloat(calculateCompetencyScore(bestFit));
+
+            // Check if best fit meets minimum competency score
+            if (competency >= MIN_COMPETENCY_SCORE) {
+                return bestFit;
+            }
+
+            return null;
+        }
+
+        function reassignTasksForAbsentEmployee(employeeId) {
+            const employee = system.employees.find(e => e.id === employeeId);
+            if (!employee || !employee.absent) return;
+
+            // Get all tasks assigned to absent employee
+            const tasksToReassign = [...employee.tasks];
+
+            tasksToReassign.forEach(taskId => {
+                const task = system.tasks.find(t => t.id === taskId);
+                if (!task) return;
+
+                const bestFit = findBestFitTeammate(task, employeeId);
+
+                if (bestFit) {
+                    // Reassign to best fit teammate
+                    task.assignedTo = bestFit.id;
+                    bestFit.tasks.push(taskId);
+                    task.status = 'reassigning';
+                } else {
+                    // Flag for manager review
+                    task.status = 'flagged';
+                    system.flaggedTasks.push({
+                        taskId: task.id,
+                        task: task.title,
+                        originalAssignee: employee.name,
+                        reason: 'No teammate qualifies: insufficient competency score or workload at capacity',
+                        priority: task.priority
+                    });
+                }
+            });
+
+            // Clear tasks from absent employee
+            employee.tasks = [];
+        }
+
+        // UI Rendering Functions
+        function renderEmployeeList() {
+            const container = document.getElementById('employeeList');
+            container.innerHTML = system.employees.map(emp => {
+                const capacity = getAvailableCapacity(emp);
+                const competency = calculateCompetencyScore(emp);
+                return `
+                    <div class="employee-card ${emp.absent ? 'absent' : ''}">
+                        <div class="employee-info">
+                            <h3>${emp.name}</h3>
+                            <div class="employee-meta">
+                                ${emp.role} • Tasks: ${emp.tasks.length}/${WORKLOAD_THRESHOLD} • Competency: ${competency}
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" ${emp.absent ? 'checked' : ''} onchange="toggleAbsence(${emp.id})">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTaskBoard() {
+            const container = document.getElementById('taskBoard');
+            const openTasks = system.tasks.filter(t => t.status !== 'flagged');
+
+            if (openTasks.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No open tasks</p></div>';
+                return;
+            }
+
+            container.innerHTML = openTasks.map(task => {
+                const assignedEmployee = system.employees.find(e => e.id === task.assignedTo);
+                const competency = assignedEmployee ? calculateCompetencyScore(assignedEmployee) : 'N/A';
+                const capacity = assignedEmployee ? getAvailableCapacity(assignedEmployee) : 0;
+
+                return `
+                    <div class="task-card ${task.priority === 'high' ? 'urgent' : task.status === 'reassigning' ? 'warning' : ''}">
+                        <div class="task-header">
+                            <span class="task-id">${task.id}</span>
+                            <span class="task-status ${task.status}">${task.status.charAt(0).toUpperCase() + task.status.slice(1)}</span>
+                        </div>
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-details">${task.description}</div>
+                        <div class="task-assigned-to">
+                            <strong>Assigned to:</strong> ${assignedEmployee ? assignedEmployee.name : 'Unassigned'}<br>
+                            ${assignedEmployee ? `<span class="competency-score">Score: ${competency}</span> • Capacity: ${capacity}/${WORKLOAD_THRESHOLD}` : ''}
+                        </div>
+                        <div class="task-footer">
+                            <span>${task.priority.toUpperCase()} Priority</span>
+                            <span>Required: ${task.requiredRole}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderManagerReview() {
+            const container = document.getElementById('flaggedTasksList');
+            const reviewSection = document.getElementById('managerReview');
+            const badge = document.getElementById('flaggedBadge');
+
+            if (system.flaggedTasks.length === 0) {
+                reviewSection.style.display = 'none';
+                return;
+            }
+
+            reviewSection.style.display = 'block';
+            badge.textContent = system.flaggedTasks.length;
+
+            container.innerHTML = system.flaggedTasks.map(flagged => `
+                <div class="review-item">
+                    <strong>${flagged.taskId}: ${flagged.task}</strong>
+                    <div class="review-reason">
+                        📍 Originally assigned to: ${flagged.originalAssignee}<br>
+                        ⚠️ Reason: ${flagged.reason}<br>
+                        🔴 Priority: ${flagged.priority.toUpperCase()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('totalEmployees').textContent = system.employees.length;
+            document.getElementById('absenceCount').textContent = system.employees.filter(e => e.absent).length;
+            document.getElementById('openTasksCount').textContent = system.tasks.filter(t => t.status !== 'flagged').length;
+            document.getElementById('flaggedCount').textContent = system.flaggedTasks.length;
+        }
+
+        function render() {
+            renderEmployeeList();
+            renderTaskBoard();
+            renderManagerReview();
+            updateStats();
+        }
+
+        // Event Handlers
+        function toggleAbsence(employeeId) {
+            const employee = system.employees.find(e => e.id === employeeId);
+            if (!employee) return;
+
+            employee.absent = !employee.absent;
+
+            if (employee.absent) {
+                reassignTasksForAbsentEmployee(employeeId);
+            } else {
+                // Clear flagged tasks related to this employee
+                system.flaggedTasks = system.flaggedTasks.filter(ft => {
+                    const task = system.tasks.find(t => t.id === ft.taskId);
+                    return !task || task.assignedTo !== employeeId;
+                });
+
+                // Reset reassigning tasks back to open
+                system.tasks.forEach(task => {
+                    if (task.status === 'reassigning' && task.assignedTo === employeeId) {
+                        task.status = 'open';
+                    }
+                });
+            }
+
+            render();
+        }
+
+        // Initialize
+        render();
+    </script>
+</body>
+</html>
